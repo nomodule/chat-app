@@ -33,15 +33,14 @@ const autoScroll = () => {
   if (containerHeight - newMessageHeight <= scrollOffset) {
     $messages.scrollTop = $messages.scrollHeight
   }
-
-  console.log(newMessageMargin)
 }
 
 socket.on('message', (message) => {
-  console.log(message)
+  const messageByCurrentUser = message.username === username.toLowerCase()
   const html = Mustache.render(messageTemplate, {
     username: message.username,
     message: message.text,
+    messageByCurrentUser: messageByCurrentUser,
     createdAt: moment(message.createdAt).format('hh:mm a')
   })
   $messages.insertAdjacentHTML('beforeend', html)
@@ -49,10 +48,11 @@ socket.on('message', (message) => {
 })
 
 socket.on('locationMessage', (message) => {
-  console.log(message)
+  const messageByCurrentUser = message.username === username.toLowerCase()
   const html = Mustache.render(locationMessageTemplate, {
     username: message.username,
     url: message.url,
+    messageByCurrentUser: messageByCurrentUser,
     createdAt: moment(message.createdAt).format('hh:mm a')
   })
   $messages.insertAdjacentHTML('beforeend', html)
@@ -77,7 +77,6 @@ $messageForm.addEventListener('submit', (e) => {
     if (error) {
       return console.log(error)
     }
-    console.log('Message delivered!')
   })
 })
 
@@ -97,7 +96,6 @@ $locationButton.addEventListener('click', () => {
       },
       () => {
         $locationButton.removeAttribute('disabled')
-        console.log('Location shared...')
       }
     )
   })
