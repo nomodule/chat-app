@@ -14,7 +14,7 @@ const locationMessageTemplate = document.querySelector(
 const sidebarTemplate = document.querySelector('#sidebar-template').innerHTML
 
 // Options
-const { username, room } = Qs.parse(location.search, {
+const { username } = Qs.parse(location.search, {
   ignoreQueryPrefix: true
 })
 
@@ -59,8 +59,8 @@ socket.on('locationMessage', (message) => {
   autoScroll()
 })
 
-socket.on('roomData', ({ room, users }) => {
-  const html = Mustache.render(sidebarTemplate, { room, users })
+socket.on('onlineUsers', ({ users }) => {
+  const html = Mustache.render(sidebarTemplate, { users })
   document.querySelector('#sidebar').innerHTML = html
 })
 
@@ -101,7 +101,7 @@ $locationButton.addEventListener('click', () => {
   })
 })
 
-socket.emit('join', { username, room }, (error) => {
+socket.emit('join', { username }, (error) => {
   if (error) {
     alert(error)
     location.href = '/'

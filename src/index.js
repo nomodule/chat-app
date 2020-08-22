@@ -4,12 +4,7 @@ const express = require('express')
 const socketio = require('socket.io')
 const Filter = require('bad-words')
 const { generateMessage, generateLocationMessage } = require('./utils/messages')
-const {
-  addUser,
-  removeUser,
-  getUser,
-  getUsersInRoom
-} = require('./utils/users')
+const { addUser, removeUser, getUser, getUsers } = require('./utils/users')
 
 const app = express()
 const server = http.createServer(app)
@@ -21,23 +16,23 @@ const publicDirectoryPath = path.join(__dirname, '../public')
 app.use(express.static(publicDirectoryPath))
 
 io.on('connection', (socket) => {
-  socket.on('join', ({ username, room }, cb) => {
-    const { error, user } = addUser({ id: socket.id, username, room })
+  socket.on('join', ({ username }, cb) => {
+    const { error, user } = addUser({ id: socket.id, username })
 
     if (error) {
       return cb(error)
     }
 
-    socket.join(user.room)
-
     socket.emit('message', generateMessage(user.username, ' Welcome!'))
-    socket.broadcast
-      .to(user.room)
-      .emit('message', generateMessage(`${user.username} has joined!`))
-    io.to(user.room).emit('roomData', {
-      room: user.room,
-      users: getUsersInRoom(user.room)
+    socket.broadcast.emit(
+      'message',
+      generateMessage(`${user.username} has joined!`)
+    )
+
+    io.emit('onlineUsers', {
+      users: getUsers()
     })
+
     cb()
   })
 
@@ -49,14 +44,14 @@ io.on('connection', (socket) => {
       return cb('Profanity is not allowed')
     }
 
-    io.to(user.room).emit('message', generateMessage(user.username, message))
+    io.emit('message', generateMessage(user.username, message))
     cb()
   })
 
   socket.on('sendLocation', (coords, cb) => {
     const user = getUser(socket.id)
 
-    io.to(user.room).emit(
+    io.emit(
       'locationMessage',
       generateLocationMessage(
         user.username,
@@ -70,18 +65,15 @@ io.on('connection', (socket) => {
     const user = removeUser(socket.id)
 
     if (user) {
-      io.to(user.room).emit(
-        'message',
-        generateMessage('Admin', `${user.username} has left`)
-      )
-      io.to(user.room).emit('roomData', {
-        room: user.room,
-        users: getUsersInRoom(user.room)
-      })
+      io.emit('message', generateMessage('Admin', `${user.username} has left`))
     }
   })
 })
 
 server.listen(port, () => {
   console.log(`Server is up on port ${port}.`)
+})
+
+require('dns').lookup(require('os').hostname(), function (err, add, fam) {
+  console.log('addr: ' + add)
 })
